@@ -1,0 +1,62 @@
+
+services:
+
+#API DB
+  db:
+    restart: unless-stopped
+    image: postgres:17
+    volumes:
+      -  ${API_DB_PATH:-./db}:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: 'drk_core'
+      POSTGRES_USER: 'drk_core'
+      POSTGRES_PASSWORD: 'drk_core'
+# API Server
+  django:
+    restart: unless-stopped
+    image: ghcr.io/nils-witt/py-interactive-webmap-backend:main
+    environment:
+      DB_HOST: 'db'
+      DB_NAME: 'drk_core'
+      DB_USER: 'drk_core'
+      DB_PASSWORD: 'drk_core'
+      DB_PORT: '5432'
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - staticfiles:/code/staticfiles/
+    env_file:
+      - .env
+
+# Overlay Server
+  proxy:
+    restart: unless-stopped
+    build: ./resty-overlay/
+    ports:
+      - "127.0.0.1:8089:80"
+    volumes:
+      - ./proxy-nginx.conf:/etc/nginx/conf.d/default.conf
+      - ${OSM_OVERLAY_PATH}:/www/overlays
+      - ${WEBMAP_STATIC_PATH}:/www/webmap
+      - staticfiles:/usr/share/nginx/html/static
+    depends_on:
+      - tilesserver
+      - django
+    links:
+      - tilesserver
+      - django
+
+# Vector Server
+  tilesserver:
+    restart: unless-stopped
+    image: maptiler/tileserver-gl:latest
+    command: -u http://${DOMAIN}/vector/
+    volumes:
+      - ${OSM_VECTOR_PATH}:/data
+    
+
+
+volumes:
+  staticfiles:
