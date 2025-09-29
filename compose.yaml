@@ -1,7 +1,4 @@
-
 services:
-
-#API DB
   db:
     restart: unless-stopped
     image: postgres:17
@@ -44,9 +41,11 @@ services:
     depends_on:
       - tilesserver
       - django
+      - webclient
     links:
       - tilesserver
       - django
+      - webclient
 
 # Vector Server
   tilesserver:
@@ -56,7 +55,11 @@ services:
     volumes:
       - ${OSM_VECTOR_PATH}:/data
     
-
+  webclient:
+    restart: unless-stopped
+    image: ghcr.io/nils-witt/ts-interactive-webmap:main
+    ports:
+      - "127.0.0.1:8088:80"
 
 volumes:
   staticfiles:
