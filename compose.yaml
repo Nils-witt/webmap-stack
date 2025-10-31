@@ -47,7 +47,7 @@ services:
   tilesserver:
     restart: unless-stopped
     image: maptiler/tileserver-gl:latest
-    command: -u http://${DOMAIN}/vector/
+    command: -u https://${DOMAIN}/vector/
     volumes:
       - ${OSM_VECTOR_PATH}:/data
     
