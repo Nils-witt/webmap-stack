@@ -32,20 +32,16 @@ services:
     restart: unless-stopped
     build: ./resty-overlay/
     ports:
-      - "127.0.0.1:8089:80"
+      - "${PROXY_LISTENER}:8089:80"
     volumes:
-      - ./proxy-nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./proxy/virtualhost.conf:/etc/nginx/conf.d/default.conf
+      - ./proxy/additive.main:/etc/nginx/conf.d/additive.main
       - ${OSM_OVERLAY_PATH}:/www/overlays
       - ${WEBMAP_STATIC_PATH}:/www/webmap
       - staticfiles:/usr/share/nginx/html/static
-    depends_on:
-      - tilesserver
-      - django
-      - webclient
-    links:
-      - tilesserver
-      - django
-      - webclient
+    env_file:
+      - .env
+
 
 # Vector Server
   tilesserver:
