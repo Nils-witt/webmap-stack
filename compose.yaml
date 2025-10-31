@@ -54,8 +54,6 @@ services:
   webclient:
     restart: unless-stopped
     image: ghcr.io/nils-witt/ts-interactive-webmap:main
-    ports:
-      - "127.0.0.1:8088:80"
 
 volumes:
   staticfiles:
