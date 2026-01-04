@@ -6,9 +6,9 @@ services:
 # Database Server
   db:
     restart: unless-stopped
-    image: postgres:17
+    image: postgres:18
     volumes:
-      -  ${API_DB_PATH:-./db}:/var/lib/postgresql/data
+      -  ${API_DB_PATH:-./db}:/var/lib/postgresql
     environment:
       POSTGRES_DB: 'drk_core'
       POSTGRES_USER: 'drk_core'
