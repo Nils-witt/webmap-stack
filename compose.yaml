@@ -1,4 +1,9 @@
 services:
+# Redis Server
+  redis:
+    image: redis:8
+    restart: unless-stopped
+# Database Server
   db:
     restart: unless-stopped
     image: postgres:17
@@ -18,15 +23,28 @@ services:
       DB_USER: 'drk_core'
       DB_PASSWORD: 'drk_core'
       DB_PORT: '5432'
+      REDIS_HOST: 'redis'
     depends_on:
       - db
+      - redis
     links:
       - db
+      - redis
     volumes:
       - staticfiles:/code/staticfiles/
     env_file:
       - .env
-
+# Web Client
+  webclient:
+    restart: unless-stopped
+    image: ghcr.io/nils-witt/ts-interactive-webmap:${RELEASE_VERSION:-latest}
+# Vector Server
+  tilesserver:
+    restart: unless-stopped
+    image: maptiler/tileserver-gl:latest
+    command: -u https://${DOMAIN}/vector/
+    volumes:
+      - ${OSM_VECTOR_PATH}:/data
 # Overlay Server
   proxy:
     restart: unless-stopped
@@ -41,19 +59,5 @@ services:
       - staticfiles:/usr/share/nginx/html/static
     env_file:
       - .env
-
-
-# Vector Server
-  tilesserver:
-    restart: unless-stopped
-    image: maptiler/tileserver-gl:latest
-    command: -u https://${DOMAIN}/vector/
-    volumes:
-      - ${OSM_VECTOR_PATH}:/data
-    
-  webclient:
-    restart: unless-stopped
-    image: ghcr.io/nils-witt/ts-interactive-webmap:${RELEASE_VERSION:-latest}
-
 volumes:
   staticfiles:
