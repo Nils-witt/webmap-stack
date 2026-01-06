@@ -59,5 +59,14 @@ services:
       - staticfiles:/usr/share/nginx/html/static
     env_file:
       - .env
+
+    depends_on:
+      - django
+      - tilesserver
+      - webclient
+    links:
+      - django
+      - tilesserver
+      - webclient
 volumes:
   staticfiles:
