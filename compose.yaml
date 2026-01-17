@@ -1,43 +1,12 @@
 services:
-# Redis Server
-  redis:
-    image: redis:8
-    restart: unless-stopped
-# Database Server
-  db:
-    restart: unless-stopped
-    image: postgres:18
-    volumes:
-      -  ${API_DB_PATH:-./db}:/var/lib/postgresql
-    environment:
-      POSTGRES_DB: 'drk_core'
-      POSTGRES_USER: 'drk_core'
-      POSTGRES_PASSWORD: 'drk_core'
-# API Server
-  django:
-    restart: unless-stopped
-    image: ghcr.io/nils-witt/py-interactive-webmap-backend:${RELEASE_VERSION:-latest}
-    environment:
-      DB_HOST: 'db'
-      DB_NAME: 'drk_core'
-      DB_USER: 'drk_core'
-      DB_PASSWORD: 'drk_core'
-      DB_PORT: '5432'
-      REDIS_HOST: 'redis'
-    depends_on:
-      - db
-      - redis
-    links:
-      - db
-      - redis
-    volumes:
-      - staticfiles:/code/staticfiles/
-    env_file:
-      - .env
-# Web Client
+  # Web Client
   webclient:
     restart: unless-stopped
     image: ghcr.io/nils-witt/ts-interactive-webmap:${RELEASE_VERSION:-latest}
+    ports:
+      - "${PROXY_LISTENER:-127.0.0.1}:8088:80"
+    volumes:
+      - ./config.json:/usr/share/nginx/html/config.json
 # Vector Server
   tilesserver:
     restart: unless-stopped
@@ -59,14 +28,38 @@ services:
       - staticfiles:/usr/share/nginx/html/static
     env_file:
       - .env
-
     depends_on:
-      - django
+      - springboot
       - tilesserver
       - webclient
     links:
-      - django
+      - springboot
       - tilesserver
       - webclient
+# Database Server
+  dbspring:
+    restart: unless-stopped
+    image: postgres:18
+    volumes:
+      -  ${API_SPRING_DB_PATH:-./db_spring}:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: 'drk_core'
+      POSTGRES_USER: 'drk_core'
+      POSTGRES_PASSWORD: 'drk_core'
+  springboot:
+    restart: unless-stopped
+    image: ghcr.io/nils-witt/webmap_backend_spring:main
+    environment:
+      DB_URL: jdbc:postgresql://dbspring:5432/drk_core
+      DB_USER: drk_core
+      DB_PASSWORD: drk_core
+    volumes:
+      - ${OSM_OVERLAY_PATH}:/overlays
+    depends_on:
+      - dbspring
+    links:
+      - dbspring
+    env_file:
+      - .env
 volumes:
   staticfiles:
